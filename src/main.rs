@@ -15,6 +15,7 @@ fn main() {
             camera::CameraPlugin,
             environment::EnvironmentPlugin,
             input::InputPlugin,
+            states::GameStatesPlugin,
         ))
         .run();
 }
@@ -23,3 +24,4 @@ mod camera;
 mod character;
 mod environment;
 mod input;
+mod states;

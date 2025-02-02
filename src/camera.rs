@@ -1,4 +1,3 @@
-
 use bevy::prelude::*;
 
 pub struct CameraPlugin;
@@ -12,7 +11,7 @@ impl Plugin for CameraPlugin {
             Limit(-50.0, -30.0),
         ))
         .add_systems(Startup, setup)
-        .add_systems(Update, (position_camera, rotate_camera))
+        .add_systems(FixedUpdate, (position_camera, rotate_camera))
         .add_observer(rotate_x)
         .add_observer(rotate_y);
     }
