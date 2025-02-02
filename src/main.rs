@@ -1,3 +1,25 @@
+use avian3d::prelude::*;
+use bevy::prelude::*;
+use bevy_inspector_egui::quick::WorldInspectorPlugin;
+
 fn main() {
-    println!("Hello, world!");
+    App::new()
+        .add_plugins((
+            DefaultPlugins,
+            PhysicsPlugins::default(),
+            PhysicsDebugPlugin::default(),
+            WorldInspectorPlugin::default(),
+        ))
+        .add_plugins((
+            character::CharacterPlugin,
+            camera::CameraPlugin,
+            environment::EnvironmentPlugin,
+            input::InputPlugin,
+        ))
+        .run();
 }
+
+mod camera;
+mod character;
+mod environment;
+mod input;
