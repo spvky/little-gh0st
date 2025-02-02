@@ -75,7 +75,6 @@ fn accellerate(mut commands: Commands, query: Query<&Gamepad, With<crate::input:
     for input in &query {
         if let Some(right_trigger) = input.get(GamepadButton::RightTrigger2) {
             if right_trigger.abs() > 0.01 {
-                println!("{}", right_trigger);
                 commands.trigger(BipedalAction::Accelerate(right_trigger));
             }
         }

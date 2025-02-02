@@ -20,7 +20,6 @@ fn assign_primary_gamepad(
         for (entity, gamepad) in &query {
             if gamepad.just_pressed(GamepadButton::South) {
                 commands.entity(entity).insert(PrimaryGamepad);
-                println!("Primary gamepad assigned");
                 *gamepad_assigned = true;
             }
         }
