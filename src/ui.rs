@@ -175,6 +175,7 @@ impl Command for ToastNotification {
                     flex_direction: FlexDirection::Column,
                     top: Val::Percent(90.0),
                     left: Val::Percent(75.90),
+                    overflow: Overflow::clip(),
                     ..default()
                 },
                 ToastElement(index),
