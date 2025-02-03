@@ -164,7 +164,6 @@ impl Command for ToastNotification {
     fn apply(self, world: &mut World) {
         let mut toast_arena = world.get_resource_mut::<ToastConfig>().unwrap();
         let index = toast_arena.insert();
-        println!("New Toast givin index of {:?}", index);
         world
             .spawn((
                 Name::from("Toast Notification"),
