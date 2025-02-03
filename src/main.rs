@@ -16,6 +16,7 @@ fn main() {
             environment::EnvironmentPlugin,
             input::InputPlugin,
             states::GameStatesPlugin,
+            ui::UiPlugin,
         ))
         .run();
 }

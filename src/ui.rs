@@ -5,16 +5,23 @@ pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
-        app.insert_resource(ToastConfig::default());
+        app.insert_resource(ToastConfig::default()).add_systems(
+            Update,
+            (
+                toast_background_opacity,
+                toast_text_opacity,
+                handle_toast_fades,
+            ),
+        );
     }
 }
 
 #[derive(Resource)]
-struct ToastConfig {
-    arena: Arena<u16>,
-    current_index: u16,
-    opacity_map: HashMap<Index, f32>,
-    ordering_vec: Vec<Index>,
+pub(crate) struct ToastConfig {
+    pub(crate) arena: Arena<u16>,
+    pub(crate) current_index: u16,
+    pub(crate) opacity_map: HashMap<Index, f32>,
+    pub(crate) ordering_vec: Vec<Index>,
 }
 
 impl ToastConfig {
@@ -43,6 +50,14 @@ impl ToastConfig {
             *opacity = value;
         }
     }
+
+    pub fn top(&self, index: Index) -> f32 {
+        if let Some(location) = self.ordering_vec.iter().position(|i| *i == index) {
+            5.0 + (12.5 * location as f32)
+        } else {
+            5.0
+        }
+    }
 }
 
 impl Default for ToastConfig {
@@ -54,11 +69,6 @@ impl Default for ToastConfig {
             ordering_vec: Vec::new(),
         }
     }
-}
-
-struct UiPos {
-    left: Val,
-    top: Val,
 }
 
 #[derive(Component)]
@@ -79,7 +89,6 @@ pub enum ToastState {
 struct ToastContainer {
     fade: f32,
     fade_in_timer: Timer,
-    target_position: UiPos,
     index: Index,
     on_screen_timer: Timer,
     fade_out_timer: Timer,
@@ -91,10 +100,6 @@ impl ToastContainer {
         Self {
             fade,
             fade_in_timer: Timer::from_seconds(fade, TimerMode::Once),
-            target_position: UiPos {
-                left: Val::Percent(75.0),
-                top: Val::Percent(10.0),
-            },
             index,
             on_screen_timer: Timer::from_seconds(on_screen, TimerMode::Once),
             fade_out_timer: Timer::from_seconds(fade, TimerMode::Once),
@@ -123,10 +128,6 @@ impl ToastContainer {
         }
     }
 
-    fn state(&self) -> ToastState {
-        self.state
-    }
-
     fn finished(&self) -> bool {
         use ToastState as T;
         match self.state {
@@ -150,12 +151,23 @@ pub struct ToastNotification {
     body: String,
 }
 
+impl ToastNotification {
+    pub fn new(title: &str, body: &str) -> Self {
+        Self {
+            title: title.to_string(),
+            body: body.to_string(),
+        }
+    }
+}
+
 impl Command for ToastNotification {
     fn apply(self, world: &mut World) {
         let mut toast_arena = world.get_resource_mut::<ToastConfig>().unwrap();
         let index = toast_arena.insert();
+        println!("New Toast givin index of {:?}", index);
         world
             .spawn((
+                Name::from("Toast Notification"),
                 Node {
                     width: Val::Percent(20.0),
                     height: Val::Percent(10.0),
@@ -178,7 +190,7 @@ impl Command for ToastNotification {
                             align_content: AlignContent::Center,
                             justify_content: JustifyContent::Center,
                             width: Val::Percent(100.0),
-                            height: Val::Percent(20.0),
+                            height: Val::Percent(30.0),
                             ..default()
                         },
                         BackgroundColor(BLUE_600.into()),
@@ -186,7 +198,11 @@ impl Command for ToastNotification {
                         ToastElement(index),
                     ))
                     .with_children(|p| {
-                        p.spawn((Text(self.title), ToastElement(index)));
+                        p.spawn((
+                            Text(self.title),
+                            ToastElement(index),
+                            BackgroundColor(BLUE_600.into()),
+                        ));
                     });
 
                 parent
@@ -196,14 +212,19 @@ impl Command for ToastNotification {
                             align_content: AlignContent::Center,
                             justify_content: JustifyContent::Center,
                             width: Val::Percent(100.0),
-                            height: Val::Percent(80.0),
+                            height: Val::Percent(70.0),
                             ..default()
                         },
                         ToastBody,
                         ToastElement(index),
+                        BackgroundColor(BLUE_900.into()),
                     ))
                     .with_children(|p| {
-                        p.spawn((Text(self.body), ToastElement(index)));
+                        p.spawn((
+                            Text(self.body),
+                            ToastElement(index),
+                            BackgroundColor(BLUE_900.into()),
+                        ));
                     });
             });
     }
@@ -223,16 +244,67 @@ fn handle_toast_fades(
             commands.entity(entity).despawn_recursive();
         } else {
             toast_config.set_opacity(index, toast.tween());
+
+            let target_value = toast_config.top(index);
+            let fade_out_value = -20.0;
+            let mut new_value = if let Val::Percent(percent) = node.top {
+                percent
+            } else {
+                target_value
+            };
+
             use ToastState as T;
             match toast.state {
                 T::FadeIn => {
-                    node.top = Val::Percent(
-                        100.0, /*TODO: Fully implement the ordering vec in toast config to always find the proper position for each notification */
-                    )
+                    new_value.smooth_nudge(&target_value, 10.0, time.delta_secs());
+                    node.top = Val::Percent(new_value);
                 }
-                T::OnScreen => {}
-                T::FadeOut => {}
+                T::OnScreen => {
+                    new_value.smooth_nudge(&target_value, 10.0, time.delta_secs());
+                    node.top = Val::Percent(new_value);
+                }
+                T::FadeOut => {
+                    new_value.smooth_nudge(&fade_out_value, 10.0, time.delta_secs());
+                    node.top = Val::Percent(new_value);
+                }
             }
         }
+    }
+}
+
+fn toast_background_opacity(
+    toast_config: Res<ToastConfig>,
+    mut query: Query<(&mut BackgroundColor, &ToastElement)>,
+) {
+    for (mut background_color, toast) in &mut query {
+        if let Some(opacity) = toast_config.opacity(toast.0) {
+            background_color.0 = background_color.0.with_alpha(opacity);
+        }
+    }
+}
+
+fn toast_text_opacity(
+    toast_config: Res<ToastConfig>,
+    mut query: Query<(&mut TextColor, &ToastElement)>,
+) {
+    for (mut text_color, toast) in &mut query {
+        if let Some(opacity) = toast_config.opacity(toast.0) {
+            text_color.0 = text_color.0.with_alpha(opacity);
+        }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::ToastConfig;
+
+    #[test]
+    fn test_top_values() {
+        let mut config = ToastConfig::default();
+        config.insert();
+        config.insert();
+        let a = config.insert();
+        let a_top = config.top(a);
+        assert_eq!(a_top, 30.0);
     }
 }
