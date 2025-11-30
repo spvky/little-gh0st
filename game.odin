@@ -14,17 +14,20 @@ SCREEN_HEIGHT :: 450
 
 
 init :: proc() {
-	WINDOW_WIDTH = 1600
-	WINDOW_HEIGHT = 900
+	WINDOW_WIDTH = 1920
+	WINDOW_HEIGHT = 1080
 	run = true
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Game")
+	init_camera()
 	screen_texture = rl.LoadRenderTexture(WINDOW_WIDTH, WINDOW_HEIGHT)
 	world = make_world()
 }
 
 update :: proc() {
+	update_camera()
 	render_scene()
 	draw_to_screen()
+	free_all(context.temp_allocator)
 }
 
 shutdown :: proc() {
