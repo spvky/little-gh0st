@@ -1,11 +1,14 @@
 package main
 
 import "core:c"
+import "core:math"
 import rl "vendor:raylib"
 
 world: World
 screen_texture: rl.RenderTexture
 run: bool
+time: Time
+player: Player
 
 WINDOW_WIDTH: i32
 WINDOW_HEIGHT: i32
@@ -19,15 +22,38 @@ init :: proc() {
 	run = true
 	rl.InitWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "Game")
 	init_camera()
+	init_physics()
+	init_player({10, 1, 0})
 	screen_texture = rl.LoadRenderTexture(WINDOW_WIDTH, WINDOW_HEIGHT)
 	world = make_world()
 }
 
 update :: proc() {
 	update_camera()
+	playing()
 	render_scene()
 	draw_to_screen()
 	free_all(context.temp_allocator)
+}
+
+playing :: proc() {
+	if !time.started {
+		time.t = f32(rl.GetTime())
+		time.started = true
+	}
+	// Non physics updates
+	poll_player_input()
+	apply_player_movement_delta()
+	//////////////////////
+	t1 := f32(rl.GetTime())
+	elapsed := math.min(t1 - time.t, 0.25)
+	time.t = t1
+	time.simulation_time += elapsed
+	for time.simulation_time >= TICK_RATE {
+		physics_step()
+		time.simulation_time -= TICK_RATE
+	}
+	alpha := time.simulation_time / TICK_RATE
 }
 
 shutdown :: proc() {

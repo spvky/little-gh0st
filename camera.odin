@@ -26,7 +26,7 @@ init_camera :: proc() {
 		smoothing    = 5,
 		position     = {0, 10, 0},
 		target_pitch = m.PI * -0.125,
-		target_yaw   = m.PI * 0.5,
+		// target_yaw   = m.PI * 0.5,
 	}
 }
 

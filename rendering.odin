@@ -13,6 +13,7 @@ render_scene :: proc() {
 	rl.DrawCubeV({-6.25, 5, 20}, {12.5, 10, 1}, rl.PURPLE)
 	rl.DrawCubeV({20, 0, 0}, {1, 10, 25}, rl.RED)
 	rl.DrawCubeV({-20, 0, 0}, {1, 10, 25}, rl.YELLOW)
+	draw_player()
 	rl.EndMode3D()
 	rl.EndTextureMode()
 }
