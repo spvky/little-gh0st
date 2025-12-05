@@ -1,5 +1,6 @@
 package main
 
+import l "core:math/linalg"
 import rl "vendor:raylib"
 
 render_scene :: proc() {
@@ -14,6 +15,7 @@ render_scene :: proc() {
 	rl.DrawCubeV({20, 0, 0}, {1, 10, 25}, rl.RED)
 	rl.DrawCubeV({-20, 0, 0}, {1, 10, 25}, rl.YELLOW)
 	draw_player()
+	player_raycast()
 	rl.EndMode3D()
 	rl.EndTextureMode()
 }
@@ -49,4 +51,17 @@ draw_to_screen :: proc() {
 	middle: Vec2 = {f32(WINDOW_WIDTH) / 2, f32(WINDOW_HEIGHT) / 2}
 	rl.DrawCircleV(middle, 1, rl.WHITE)
 	rl.EndDrawing()
+}
+
+player_raycast :: proc() {
+	ray := Raycast {
+		origin    = camera.position,
+		direction = l.normalize(camera.forward),
+		toi       = 100,
+	}
+
+	sphere := Sphere{player.translation.x, player.translation.y, player.translation.z, 1}
+	if i, ok := sphere_ray_intersection(ray, sphere); ok {
+		rl.DrawSphere(i, 0.25, rl.GREEN)
+	}
 }
