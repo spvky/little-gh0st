@@ -23,3 +23,13 @@ apply_rigidbody_velocities :: proc() {
 		rb.translation += rb.velocity * TICK_RATE
 	}
 }
+
+sphere_ray_intersection :: proc(
+	r: Raycast,
+	s: Sphere,
+) -> (
+	intersection_point: Vec3,
+	intersection: bool,
+) {
+	return
+}

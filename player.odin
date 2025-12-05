@@ -1,5 +1,6 @@
 package main
 
+import "core:log"
 import rl "vendor:raylib"
 
 Player :: struct {

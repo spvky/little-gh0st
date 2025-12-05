@@ -9,6 +9,7 @@ camera: Camera
 
 Camera :: struct {
 	using raw:        rl.Camera3D,
+	mode:             Camera_Mode,
 	look_sensitivity: f32,
 	target_pitch:     f32,
 	pitch:            f32,
@@ -21,6 +22,7 @@ Camera :: struct {
 
 init_camera :: proc() {
 	camera = Camera {
+		mode         = Free{},
 		fovy         = 90,
 		up           = {0, 1, 0},
 		smoothing    = 5,
@@ -30,26 +32,47 @@ init_camera :: proc() {
 	}
 }
 
+Camera_Mode :: union {
+	Orbit,
+	Free,
+}
+
+// Camera mode that makes the camera orbit a target
+Orbit :: struct {
+	cam_target:     Vec3,
+	offset:         Vec3,
+	orbit_rotation: f32,
+	look_at:        bool,
+}
+
+// Camera mode that is locked in place and manually rotated
+Free :: struct {}
+
 update_camera :: proc() {
 	frametime := rl.GetFrameTime()
-	// camera.target_yaw += frametime * m.PI * 0.25
+
 
 	camera.pitch = m.lerp(camera.pitch, camera.target_pitch, frametime * camera.smoothing)
 	camera.yaw = m.lerp(camera.yaw, camera.target_yaw, frametime * camera.smoothing)
 
-	forward := l.normalize(
-		Vec3 {
-			m.cos(camera.yaw) * m.cos(camera.pitch),
-			m.sin(camera.pitch),
-			m.sin(camera.yaw) * m.cos(camera.pitch),
-		},
-	)
-	right := l.normalize(l.cross(forward, Vec3{0, 1, 0}))
+	switch v in camera.mode {
+	case Free:
+		forward := l.normalize(
+			Vec3 {
+				m.cos(camera.yaw) * m.cos(camera.pitch),
+				m.sin(camera.pitch),
+				m.sin(camera.yaw) * m.cos(camera.pitch),
+			},
+		)
+		right := l.normalize(l.cross(forward, Vec3{0, 1, 0}))
 
 
-	camera.forward = forward
-	camera.right = right
-	camera.target = camera.position + forward
+		camera.forward = forward
+		camera.right = right
+		camera.target = camera.position + forward
+
+	case Orbit:
+	}
 }
 
 interpolate_vector :: proc(vector: Vec3) -> Vec3 {
