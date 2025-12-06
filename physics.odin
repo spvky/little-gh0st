@@ -28,13 +28,7 @@ apply_rigidbody_velocities :: proc() {
 }
 
 // Sphere ray collision using a quadratic equation, Real Time Collision Detection pg.177
-sphere_ray_intersection :: proc(
-	r: Raycast,
-	s: Sphere,
-) -> (
-	intersection_point: Vec3,
-	intersection: bool,
-) {
+raycast_sphere :: proc(r: Raycast, s: Sphere) -> (intersection_point: Vec3, intersection: bool) {
 	m := r.origin - s.xyz
 	b := l.dot(m, r.direction)
 	c := l.dot(m, m) - (s.w * s.w)
@@ -45,4 +39,39 @@ sphere_ray_intersection :: proc(
 		intersection_point = r.origin + (r.direction * t)
 	}
 	return
+}
+
+raycast_aabb :: proc(r: Raycast, b: AABB) -> (intersection_point: Vec3, intersection: bool) {
+	p := r.origin
+	d := r.direction
+	t_min := -math.MAX_F32_PRECISION
+	t_max := r.toi
+
+	for i in 0 ..< 3 {
+		if math.abs(d[i]) < math.F32_EPSILON {
+			if p[i] < b[0][i] || p[i] > b[1][i] {
+				return
+			}
+		} else {
+			ood := 1 / r.direction[i]
+			t1 := (b[0][i] - p[i]) * ood
+			t2 := (b[1][i] - p[i]) * ood
+			if t1 < t2 {
+				t1, t2 = t2, t1
+			}
+			if t1 > t_min {t_min = t1}
+			if t2 > t_max {t_max = t2}
+			if t_min > t_max {
+				return
+			}
+		}
+	}
+	intersection_point = p + (d * t_min)
+	intersection = true
+	return
+}
+
+raycast :: proc {
+	raycast_sphere,
+	raycast_aabb,
 }
