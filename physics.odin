@@ -44,7 +44,7 @@ raycast_sphere :: proc(r: Raycast, s: Sphere) -> (intersection_point: Vec3, inte
 raycast_aabb :: proc(r: Raycast, b: AABB) -> (intersection_point: Vec3, intersection: bool) {
 	p := r.origin
 	d := r.direction
-	t_min := -math.MAX_F32_PRECISION
+	t_min := -math.F32_MAX
 	t_max := r.toi
 
 	for i in 0 ..< 3 {
